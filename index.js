@@ -1,5 +1,3 @@
-
-//ForcedEntry192
 const faqData = [
     {
         question: "What is Forced Entry?",
@@ -30,9 +28,6 @@ const faqData = [
         answer: `Forced Entry supports both solo matchmaking and team play with friends.`
     },
 ];
-
-
-
 
 const downloadBtn = document.getElementById('downloadBtn');
 const faqList = document.getElementById('faqList');
@@ -83,7 +78,6 @@ function setupNav() {
         });
     });
 }
-
 
 function setuplistener() {
     downloadBtn.addEventListener('click', startDownload);
@@ -192,9 +186,6 @@ function showDownloadcomplete() {
         animation: slide 0.5s ease-out;
     `;
 
-
-
-
     setTimeout(() => {
         notification.style.animation = 'slideout 0.5s ease-in';
         setTimeout(() => {
@@ -203,7 +194,6 @@ function showDownloadcomplete() {
     }, 3000);
 }
 
-// Remove spin animations
 const style = document.createElement('style');
 style.textContent = `
     @keyframes slide {
@@ -216,3 +206,62 @@ style.textContent = `
     }
 `;
 document.head.appendChild(style);
+
+const phrases = [
+    "Fast. Precise. Lethal.",
+    "No Respawn. No Mercy.",
+    "Knockout or Be Knocked.",
+    "Enter. Fight. Survive."
+];
+
+const typewriterElement = document.getElementById('typewriter');
+let phraseIndex = 0;
+let isDeleting = false;
+
+function typeWriter() {
+    const currentPhrase = phrases[phraseIndex];
+    const currentLength = isDeleting 
+        ? currentPhrase.length - typewriterElement.textContent.length 
+        : typewriterElement.textContent.length;
+
+    const baseSpeed = isDeleting ? 40 : 80;
+    const speed = baseSpeed + Math.random() * 60;
+
+    if (!isDeleting && currentLength === currentPhrase.length) {
+
+        setTimeout(() => { isDeleting = true; typeWriter(); }, 2000);
+        return;
+    }
+
+    if (isDeleting && currentLength === 0) {
+
+        isDeleting = false;
+        phraseIndex = (phraseIndex + 1) % phrases.length;
+    }
+
+    typewriterElement.textContent = isDeleting
+        ? currentPhrase.substring(0, currentLength - 1)
+        : currentPhrase.substring(0, currentLength + 1);
+
+    if (isDeleting && Math.random() < 0.3) {
+        typewriterElement.parentNode.classList.add('glitch-burst');
+        setTimeout(() => typewriterElement.parentNode.classList.remove('glitch-burst'), 150);
+    }
+
+    setTimeout(typeWriter, speed);
+}
+
+const extraGlitchStyle = document.createElement('style');
+extraGlitchStyle.textContent = `
+    .glitch-burst { animation: burst 0.15s linear 3; }
+    @keyframes burst {
+        0%,100% { transform: translate(0); }
+        20% { transform: translate(-8px, -4px); color: #00ffff; }
+        40% { transform: translate(10px, 6px); color: #ff00ff; }
+        60% { transform: translate(-6px, 8px); color: #ffffff; }
+        80% { transform: translate(7px, -5px); }
+    }
+`;
+document.head.appendChild(extraGlitchStyle);
+
+typeWriter();
