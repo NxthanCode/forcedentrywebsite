@@ -524,3 +524,68 @@ body{
     opacity: 1;
     transform: translateX(0);
 }
+
+.meteors {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.meteor {
+    position: absolute;
+    top: -100px;
+    width: 3px;
+    height: 120px;
+    background: linear-gradient(to bottom, rgba(255,255,255,0) 0%, #ffffff 50%, rgba(255, 255, 255, 0) 100%);
+    border-radius: 50px;
+    box-shadow: 0 0 15px #fff, 0 0 30px #fff;
+    animation: meteor-fall linear infinite;
+}
+
+.meteors::before {
+    content: "";
+    position: absolute;
+    width: 100%;
+    height: 100%;
+}
+
+.meteor:nth-child(1)  { left: 8%;   animation-duration: 1.6s; animation-delay: 0s;     transform: rotate(5deg); }
+.meteor:nth-child(2)  { left: 18%;  animation-duration: 2.1s; animation-delay: 0.8s;   transform: rotate(-8deg); }
+.meteor:nth-child(3)  { left: 27%;  animation-duration: 1.4s; animation-delay: 2.3s;   transform: rotate(12deg); }
+.meteor:nth-child(4)  { left: 39%;  animation-duration: 2.5s; animation-delay: 1.1s;   transform: rotate(-6deg); }
+.meteor:nth-child(5)  { left: 48%;  animation-duration: 1.8s; animation-delay: 3.7s;   transform: rotate(9deg); }
+.meteor:nth-child(6)  { left: 59%;  animation-duration: 2.0s; animation-delay: 0.5s;   transform: rotate(-10deg); }
+.meteor:nth-child(7)  { left: 68%;  animation-duration: 1.7s; animation-delay: 2.9s;   transform: rotate(14deg); }
+.meteor:nth-child(8)  { left: 76%;  animation-duration: 2.3s; animation-delay: 1.6s;   transform: rotate(-7deg); }
+.meteor:nth-child(9)  { left: 84%;  animation-duration: 1.5s; animation-delay: 0.2s;   transform: rotate(11deg); }
+.meteor:nth-child(10) { left: 93%;  animation-duration: 1.9s; animation-delay: 4.1s;   transform: rotate(-4deg); }
+.meteor:nth-child(11) { left: 12%;  animation-duration: 2.2s; animation-delay: 3.3s;   transform: rotate(6deg); }
+.meteor:nth-child(12) { left: 71%;  animation-duration: 1.8s; animation-delay: 2.5s;   transform: rotate(-13deg); }
+
+@keyframes meteor-fall {
+    0%   { transform: translateY(-200px) rotate(var(--r, 0deg)); opacity: 0; }
+    10%  { opacity: 1; }
+    90%  { opacity: 1; }
+    100% { transform: translateY(calc(100vh + 200px)) rotate(var(--r, 0deg)); opacity: 0; }
+}
+
+.meteors::before {
+    counter-reset: meteor 12;
+}
+
+.meteors::after {
+    content: "";
+    display: block;
+    position: absolute;
+    counter-increment: meteor;
+}
+
+.meteor {
+    --rot: var(--r, 0deg);
+    animation: meteor-fall calc(1s + var(--i,0) * 0.3s) linear infinite;
+    animation-delay: calc(var(--d,0) * 1s);
+}
