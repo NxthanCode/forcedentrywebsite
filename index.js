@@ -13,6 +13,7 @@ const faqData = [
                 <li><b>5v5 Team Knockout:</b> Teams of five battle until one team remains.</li>
                 <li><b>Five Team 2v2 Knockout:</b> 5 teams of 2 players each compete to be the last team standing.</li>
                 <li><b>Solo Knockout:</b> Every player fights for themselves until only one remains.</li>
+                <li><b>Deathmatch:</b> Fighting and respawning until 20 kills get reached.</li>
             </ul>
         `
     },
