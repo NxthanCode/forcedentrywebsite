@@ -53,7 +53,7 @@ function updateNav() {
 
     navLinks.forEach(link => {
         link.classList.remove('active');
-        if (link.getAttribute('href') === `${current}`) {
+        if (link.getAttribute('href').substring(1) === current) {
             link.classList.add('active');
         }
     });
@@ -64,6 +64,7 @@ window.addEventListener('scroll', updateNav);
 function setupNav() {
     const navDownload = document.getElementById('navDownload');
     const navFaq = document.getElementById('navFaq');
+    const navUpdates = document.getElementById('navUpdates');
 
     navDownload.addEventListener('click', (e) => {
         e.preventDefault();
@@ -71,6 +72,15 @@ function setupNav() {
             behavior: 'smooth'
         });
     });
+
+    navUpdates.addEventListener('click', (e) => {
+        e.preventDefault();
+        document.getElementById('updates').scrollIntoView({
+            behavior: 'smooth'
+
+        });
+    });
+
     navFaq.addEventListener('click', (e) => {
         e.preventDefault();
         document.getElementById('faq').scrollIntoView({
@@ -265,3 +275,5 @@ extraGlitchStyle.textContent = `
 document.head.appendChild(extraGlitchStyle);
 
 typeWriter();
+
+//ForcedEntry192 - Hunterz192 - Hunter192
