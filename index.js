@@ -1,3 +1,4 @@
+//ForcedEntry192- Hunterz192 
 const faqData = [
     {
         question: "What is Forced Entry?",
@@ -28,85 +29,19 @@ const faqData = [
         answer: `Forced Entry supports both solo matchmaking and team play with friends.`
     },
 ];
-
-const downloadBtn = document.getElementById('downloadBtn');
-const faqList = document.getElementById('faqList');
-
 document.addEventListener('DOMContentLoaded', function() {
-    initfaq();
-    setuplistener();
+    initFaq();
+    setupListeners();
     setupNav();
+    startTypewriter();
 });
-
-function updateNav() {
-    const sections = document.querySelectorAll('section');
-    const navLinks = document.querySelectorAll('.nav-link');
-    let current = '';
-
-    sections.forEach(section => {
-        const sectionTop = section.offsetTop - 100;
-        const sectionHeight = section.clientHeight;
-        if (pageYOffset >= sectionTop && pageYOffset < sectionTop + sectionHeight) {
-            current = section.getAttribute('id');
-        }
-    });
-
-    navLinks.forEach(link => {
-        link.classList.remove('active');
-        if (link.getAttribute('href').substring(1) === current) {
-            link.classList.add('active');
-        }
-    });
-}
-
-window.addEventListener('scroll', updateNav);
-
-function setupNav() {
-    const navDownload = document.getElementById('navDownload');
-    const navFaq = document.getElementById('navFaq');
-    const navUpdates = document.getElementById('navUpdates');
-
-    navDownload.addEventListener('click', (e) => {
-        e.preventDefault();
-        document.getElementById('download').scrollIntoView({
-            behavior: 'smooth'
-        });
-    });
-
-    navUpdates.addEventListener('click', (e) => {
-        e.preventDefault();
-        document.getElementById('updates').scrollIntoView({
-            behavior: 'smooth'
-
-        });
-    });
-
-    navFaq.addEventListener('click', (e) => {
-        e.preventDefault();
-        document.getElementById('faq').scrollIntoView({
-            behavior: 'smooth'
-        });
-    });
-}
-
-function setuplistener() {
-    downloadBtn.addEventListener('click', startDownload);
-
-    downloadBtn.addEventListener('keypress', function(e) {
-        if (e.key === "Enter" || e.key === " ") {
-            startDownload();
-        }
-    });
-}
-
-function initfaq() {
+function initFaq() {
     faqData.forEach((faq, index) => {
         const faqItem = document.createElement('div');
         faqItem.className = 'faq-item';
         faqItem.style.animationDelay = `${index * 0.1}s`;
-
         faqItem.innerHTML = `
-            <div class="faq-question" tabIndex="0">
+            <div class="faq-question" tabindex="0">
                 ${faq.question}
                 <span class="faq-toggle">+</span>
             </div>
@@ -114,12 +49,9 @@ function initfaq() {
                 ${faq.answer}
             </div>
         `;
-
-        faqList.appendChild(faqItem);
-
+        document.getElementById('faqList').appendChild(faqItem);
         const question = faqItem.querySelector('.faq-question');
         question.addEventListener('click', () => toggleFaq(faqItem));
-
         question.addEventListener('keypress', (e) => {
             if (e.key === 'Enter' || e.key === ' ') {
                 toggleFaq(faqItem);
@@ -127,11 +59,15 @@ function initfaq() {
         });
     });
 }
-
 function toggleFaq(faqItem) {
     const isActive = faqItem.classList.contains('active');
     const answer = faqItem.querySelector('.faq-answer');
-
+    document.querySelectorAll('.faq-item').forEach(item => {
+        if (item !== faqItem) {
+            item.classList.remove('active');
+            item.querySelector('.faq-answer').classList.remove('active');
+        }
+    });
     if (!isActive) {
         faqItem.classList.add('active');
         answer.classList.add('active');
@@ -140,140 +76,183 @@ function toggleFaq(faqItem) {
         answer.classList.remove('active');
     }
 }
-
+function setupListeners() {
+    const downloadBtn = document.getElementById('downloadBtn');
+    if (downloadBtn) {
+        downloadBtn.addEventListener('click', startDownload);
+        downloadBtn.addEventListener('keypress', function(e) {
+            if (e.key === "Enter" || e.key === " ") {
+                startDownload();
+            }
+        });
+    }
+}
 function startDownload() {
     let progressbar = document.querySelector('.download-progress');
     if (!progressbar) {
         progressbar = document.createElement('div');
         progressbar.className = 'download-progress';
         progressbar.innerHTML = '<div class="progress-bar"></div>';
+        const downloadBtn = document.getElementById('downloadBtn');
         downloadBtn.parentNode.insertBefore(progressbar, downloadBtn.nextSibling);
     }
-
     const progress = progressbar.querySelector('.progress-bar');
-
     progressbar.style.display = 'block';
-
     let prog = 0;
     const interval = setInterval(() => {
         prog += Math.random() * 12;
         if (prog >= 100) {
             prog = 100;
             clearInterval(interval);
-
             setTimeout(() => {
                 progressbar.style.display = 'none';
                 progress.style.width = '0%';
-                showDownloadcomplete();
+                showDownloadComplete();
             }, 400);
         }
         progress.style.width = prog + "%";
-
     }, 100);
-
+    const downloadBtn = document.getElementById('downloadBtn');
     const originalText = downloadBtn.innerHTML;
-    downloadBtn.innerHTML = 'Downloading...'; 
+    downloadBtn.innerHTML = '<i class="fas fa-download"></i> Downloading...';
     downloadBtn.disabled = true;
-
     setTimeout(() => {
         downloadBtn.innerHTML = originalText;
         downloadBtn.disabled = false;
     }, 4000);
 }
-
-function showDownloadcomplete() {
+function showDownloadComplete() {
     const notification = document.createElement('div');
     notification.style.cssText = `
         position: fixed;
         top: 20px;
         right: 20px;
-        background: linear-gradient(45deg, #3b3b3bff, #f7f8f9ff);
-        color: white;
+        background: linear-gradient(45deg, #3b3b3b, #f7f8f9);
+        color: #000;
         padding: 1rem 2rem;
         border-radius: 10px;
         box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
         z-index: 1000;
-        animation: slide 0.5s ease-out;
+        animation: slideIn 0.5s ease-out;
+        font-weight: 600;
     `;
-
+    notification.innerHTML = '<i class="fas fa-check-circle"></i> Download Complete!';
+    document.body.appendChild(notification);
     setTimeout(() => {
-        notification.style.animation = 'slideout 0.5s ease-in';
+        notification.style.animation = 'slideOut 0.5s ease-in';
         setTimeout(() => {
-            document.body.removeChild(notification);
+            if (notification.parentNode) {
+                document.body.removeChild(notification);
+            }
         }, 500);
     }, 3000);
 }
-
-const style = document.createElement('style');
-style.textContent = `
-    @keyframes slide {
-        from { transform: translateX(100%); opacity: 0; }
-        to { transform: translateX(0); opacity: 1; }
+function updateNav() {
+    const sections = document.querySelectorAll('section');
+    const navLinks = document.querySelectorAll('.nav-link');
+    let current = '';
+    sections.forEach(section => {
+        const sectionTop = section.offsetTop - 100;
+        const sectionHeight = section.clientHeight;
+        if (pageYOffset >= sectionTop && pageYOffset < sectionTop + sectionHeight) {
+            current = section.getAttribute('id');
+        }
+    });
+    navLinks.forEach(link => {
+        link.classList.remove('active');
+        if (link.getAttribute('href') === `#${current}`) {
+            link.classList.add('active');
+        }
+    });
+}
+function setupNav() {
+    const navDownload = document.getElementById('navDownload');
+    const navFaq = document.getElementById('navFaq');
+    const navUpdates = document.getElementById('navUpdates');
+    if (navDownload) {
+        navDownload.addEventListener('click', (e) => {
+            e.preventDefault();
+            document.getElementById('download').scrollIntoView({
+                behavior: 'smooth'
+            });
+        });
     }
-    @keyframes slideout {
-        from { transform: translateX(0); opacity: 1; }
-        to { transform: translateX(100%); opacity: 0; }
+    if (navUpdates) {
+        navUpdates.addEventListener('click', (e) => {
+            e.preventDefault();
+            document.getElementById('updates').scrollIntoView({
+                behavior: 'smooth'
+            });
+        });
     }
-`;
-document.head.appendChild(style);
-
+    if (navFaq) {
+        navFaq.addEventListener('click', (e) => {
+            e.preventDefault();
+            document.getElementById('faq').scrollIntoView({
+                behavior: 'smooth'
+            });
+        });
+    }
+    window.addEventListener('scroll', updateNav);
+}
 const phrases = [
     "Fast. Precise. Lethal.",
     "No Respawn. No Mercy.",
     "Knockout or Be Knocked.",
     "Enter. Fight. Survive."
 ];
-
-const typewriterElement = document.getElementById('typewriter');
-let phraseIndex = 0;
-let isDeleting = false;
-
-function typeWriter() {
-    const currentPhrase = phrases[phraseIndex];
-    const currentLength = isDeleting 
-        ? currentPhrase.length - typewriterElement.textContent.length 
-        : typewriterElement.textContent.length;
-
-    const baseSpeed = isDeleting ? 40 : 80;
-    const speed = baseSpeed + Math.random() * 60;
-
-    if (!isDeleting && currentLength === currentPhrase.length) {
-
-        setTimeout(() => { isDeleting = true; typeWriter(); }, 2000);
-        return;
+function startTypewriter() {
+    const typewriterElement = document.getElementById('typewriter');
+    if (!typewriterElement) return;
+    let phraseIndex = 0;
+    let isDeleting = false;
+    let typingSpeed = 100;
+    function type() {
+        const currentPhrase = phrases[phraseIndex];
+        if (isDeleting) {
+            typewriterElement.textContent = currentPhrase.substring(0, typewriterElement.textContent.length - 1);
+            typingSpeed = 50;
+        } else {
+            typewriterElement.textContent = currentPhrase.substring(0, typewriterElement.textContent.length + 1);
+            typingSpeed = 100;
+        }
+        if (!isDeleting && typewriterElement.textContent === currentPhrase) {
+            typingSpeed = 2000; 
+            isDeleting = true;
+        } 
+        else if (isDeleting && typewriterElement.textContent === '') {
+            isDeleting = false;
+            phraseIndex = (phraseIndex + 1) % phrases.length;
+            typingSpeed = 500; 
+        }
+        setTimeout(type, typingSpeed);
     }
-
-    if (isDeleting && currentLength === 0) {
-
-        isDeleting = false;
-        phraseIndex = (phraseIndex + 1) % phrases.length;
-    }
-
-    typewriterElement.textContent = isDeleting
-        ? currentPhrase.substring(0, currentLength - 1)
-        : currentPhrase.substring(0, currentLength + 1);
-
-    if (isDeleting && Math.random() < 0.3) {
-        typewriterElement.parentNode.classList.add('glitch-burst');
-        setTimeout(() => typewriterElement.parentNode.classList.remove('glitch-burst'), 150);
-    }
-
-    setTimeout(typeWriter, speed);
+    type();
 }
-
-const extraGlitchStyle = document.createElement('style');
-extraGlitchStyle.textContent = `
-    .glitch-burst { animation: burst 0.15s linear 3; }
-    @keyframes burst {
-        0%,100% { transform: translate(0); }
-        20% { transform: translate(-8px, -4px); color: #00ffff; }
-        40% { transform: translate(10px, 6px); color: #ff00ff; }
-        60% { transform: translate(-6px, 8px); color: #ffffff; }
-        80% { transform: translate(7px, -5px); }
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes slideOut {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(100%); opacity: 0; }
+    }
+    .download-progress {
+        width: 100%;
+        height: 4px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 2px;
+        margin-top: 1rem;
+        overflow: hidden;
+        display: none;
+    }
+    .progress-bar {
+        height: 100%;
+        background: linear-gradient(45deg, #ffffff, #999999);
+        width: 0%;
+        transition: width 0.3s ease;
     }
 `;
-document.head.appendChild(extraGlitchStyle);
-
-typeWriter();
-
-//ForcedEntry192 - Hunterz192 - Hunter192
+document.head.appendChild(style);
