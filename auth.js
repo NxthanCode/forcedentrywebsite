@@ -1,258 +1,304 @@
-//ForcedEntry192- Hunterz192 
-const faqData = [
-    {
-        question: "What is Forced Entry?",
-        answer: `Forced Entry is a fast-paced FPS shooter developed by Hunterz, featuring intense knockout-style gameplay and multiple competitive modes.`
-    },
-    {
-        question: "What game modes are available in Forced Entry?",
-        answer: `
-            Forced Entry features multiple knockout-style modes:<br><br>
-            <ul>
-                <li><b>5v5 Team Knockout:</b> Teams of five battle until one team remains.</li>
-                <li><b>Five Team 2v2 Knockout:</b> 5 teams of 2 players each compete to be the last team standing.</li>
-                <li><b>Solo Knockout:</b> Every player fights for themselves until only one remains.</li>
-                <li><b>Deathmatch:</b> Fighting and respawning until 20 kills get reached.</li>
-            </ul>
-        `
-    },
-    {
-        question: "How many players can join a match?",
-        answer: `Depending on the mode, matches support 10 players (Free-for-All or 5v5), or 10 teams of 2 players each.`
-    },
-    {
-        question: "How can I report bugs or give feedback?",
-        answer: `You can reach us at <b>forcedentry.game@gmail.com</b>.`
-    },
-    {
-        question: "Can I play solo or only with friends?",
-        answer: `Forced Entry supports both solo matchmaking and team play with friends.`
-    },
-];
+let currentUser = null;
+let tempEmail = '';
+let verificationTimer = null;
+const API_BASE_URL = 'https://backend-2rqx.onrender.com';
 document.addEventListener('DOMContentLoaded', function() {
-    initFaq();
-    setupListeners();
-    setupNav();
-    startTypewriter();
+    setupAuthListeners();
+    checkExistingSession();
+    console.log('✅ FastAPI Auth System Loaded');
 });
-function initFaq() {
-    faqData.forEach((faq, index) => {
-        const faqItem = document.createElement('div');
-        faqItem.className = 'faq-item';
-        faqItem.style.animationDelay = `${index * 0.1}s`;
-        faqItem.innerHTML = `
-            <div class="faq-question" tabindex="0">
-                ${faq.question}
-                <span class="faq-toggle">+</span>
+function setupAuthListeners() {
+    const loginForm = document.getElementById('loginForm');
+    const registerForm = document.getElementById('registerForm');
+    const verifyEmailForm = document.getElementById('verifyEmailForm');
+    const forgotPasswordForm = document.getElementById('forgotPasswordForm');
+    const resetPasswordForm = document.getElementById('resetPasswordForm');
+    if (loginForm) loginForm.addEventListener('submit', handleLogin);
+    if (registerForm) registerForm.addEventListener('submit', handleRegister);
+    if (verifyEmailForm) verifyEmailForm.addEventListener('submit', handleEmailVerification);
+    if (forgotPasswordForm) forgotPasswordForm.addEventListener('submit', handleForgotPassword);
+    if (resetPasswordForm) resetPasswordForm.addEventListener('submit', handleResetPassword);
+    const verifyCodeInput = document.getElementById('verifyCode');
+    const resetCodeInput = document.getElementById('resetCode');
+    if (verifyCodeInput) verifyCodeInput.addEventListener('input', formatCodeInput);
+    if (resetCodeInput) resetCodeInput.addEventListener('input', formatCodeInput);
+    window.addEventListener('click', function(event) {
+        const modals = document.querySelectorAll('.modal');
+        modals.forEach(modal => {
+            if (event.target === modal) {
+                closeModal(modal.id);
+            }
+        });
+    });
+}
+function formatCodeInput(e) {
+    const input = e.target;
+    input.value = input.value.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 6);
+}
+async function handleLogin(e) {
+    e.preventDefault();
+    const email = document.getElementById('loginEmail').value;
+    const password = document.getElementById('loginPassword').value;
+    const button = e.target.querySelector('button[type="submit"]');
+    button.disabled = true;
+    button.textContent = 'Logging in...';
+    try {
+        const response = await fetch(`${API_BASE_URL}/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+        });
+        const data = await response.json();
+        if (!response.ok) {
+            throw new Error(data.detail || 'Login failed');
+        }
+        currentUser = data.user;
+        localStorage.setItem('forcedEntry_token', data.access_token);
+        localStorage.setItem('forcedEntry_user', JSON.stringify(data.user));
+        updateUI();
+        closeModal('loginModal');
+        showAlert('Login successful!', 'success');
+    } catch (error) {
+        showAlert(error.message, 'error');
+    } finally {
+        button.disabled = false;
+        button.textContent = 'Login';
+    }
+}
+async function handleRegister(e) {
+    e.preventDefault();
+    const username = document.getElementById('registerUsername').value;
+    const email = document.getElementById('registerEmail').value;
+    const password = document.getElementById('registerPassword').value;
+    const button = e.target.querySelector('button[type="submit"]');
+    button.disabled = true;
+    button.textContent = 'Registering...';
+    try {
+        const response = await fetch(`${API_BASE_URL}/register`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, email, password })
+        });
+        const data = await response.json();
+        if (!response.ok) {
+            throw new Error(data.detail || 'Registration failed');
+        }
+        tempEmail = email;
+        showModal('verifyEmailModal');
+        startVerificationTimer();
+        showAlert('Registration successful! Check your email for verification code.', 'success');
+    } catch (error) {
+        showAlert(error.message, 'error');
+    } finally {
+        button.disabled = false;
+        button.textContent = 'Register';
+    }
+}
+async function handleEmailVerification(e) {
+    e.preventDefault();
+    const code = document.getElementById('verifyCode').value;
+    const button = e.target.querySelector('button[type="submit"]');
+    if (code.length !== 6) {
+        showAlert('Please enter a 6-digit code', 'error');
+        return;
+    }
+    button.disabled = true;
+    button.textContent = 'Verifying...';
+    try {
+        const response = await fetch(`${API_BASE_URL}/verify-email`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: tempEmail, code })
+        });
+        const data = await response.json();
+        if (!response.ok) {
+            throw new Error(data.detail || 'Verification failed');
+        }
+        currentUser = data.user;
+        localStorage.setItem('forcedEntry_token', data.access_token);
+        localStorage.setItem('forcedEntry_user', JSON.stringify(data.user));
+        stopVerificationTimer();
+        updateUI();
+        closeModal('verifyEmailModal');
+        showModal('loginModal');
+        showAlert('Email verified successfully! You can now login.', 'success');
+        tempEmail = '';
+    } catch (error) {
+        showAlert(error.message, 'error');
+    } finally {
+        button.disabled = false;
+        button.textContent = 'Verify';
+    }
+}
+async function handleForgotPassword(e) {
+    e.preventDefault();
+    const email = document.getElementById('forgotPasswordEmail').value;
+    const button = e.target.querySelector('button[type="submit"]');
+    button.disabled = true;
+    button.textContent = 'Sending...';
+    try {
+        const response = await fetch(`${API_BASE_URL}/forgot-password`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email })
+        });
+        const data = await response.json();
+        if (!response.ok) {
+            throw new Error(data.detail || 'Request failed');
+        }
+        tempEmail = email;
+        showModal('resetPasswordModal');
+        startVerificationTimer();
+        showAlert('If an account exists, a reset code has been sent to your email.', 'info');
+    } catch (error) {
+        showAlert(error.message, 'error');
+    } finally {
+        button.disabled = false;
+        button.textContent = 'Send Reset Code';
+    }
+}
+async function handleResetPassword(e) {
+    e.preventDefault();
+    const code = document.getElementById('resetCode').value;
+    const newPassword = document.getElementById('newPassword').value;
+    const button = e.target.querySelector('button[type="submit"]');
+    if (code.length !== 6) {
+        showAlert('Please enter a 6-digit code', 'error');
+        return;
+    }
+    button.disabled = true;
+    button.textContent = 'Resetting...';
+    try {
+        const response = await fetch(`${API_BASE_URL}/reset-password`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: tempEmail, new_password: newPassword, code })
+        });
+        const data = await response.json();
+        if (!response.ok) {
+            throw new Error(data.detail || 'Password reset failed');
+        }
+        stopVerificationTimer();
+        closeModal('resetPasswordModal');
+        showModal('loginModal');
+        showAlert('Password reset successfully! You can now login.', 'success');
+        tempEmail = '';
+    } catch (error) {
+        showAlert(error.message, 'error');
+    } finally {
+        button.disabled = false;
+        button.textContent = 'Reset Password';
+    }
+}
+function checkExistingSession() {
+    const token = localStorage.getItem('forcedEntry_token');
+    const userData = localStorage.getItem('forcedEntry_user');
+    if (token && userData) {
+        currentUser = JSON.parse(userData);
+        updateUI();
+    }
+}
+function updateUI() {
+    const userNavItem = document.getElementById('userNavItem');
+    const authNavItem = document.getElementById('authNavItem');
+    const navUsername = document.getElementById('navUsername');
+    if (userNavItem && authNavItem && navUsername) {
+        if (currentUser) {
+            userNavItem.style.display = 'block';
+            authNavItem.style.display = 'none';
+            navUsername.textContent = currentUser.username;
+        } else {
+            userNavItem.style.display = 'none';
+            authNavItem.style.display = 'block';
+        }
+    }
+}
+async function logout() {
+    currentUser = null;
+    localStorage.removeItem('forcedEntry_token');
+    localStorage.removeItem('forcedEntry_user');
+    updateUI();
+    closeModal('profileModal');
+    showAlert('Logged out successfully!', 'success');
+}
+async function showProfile() {
+    if (!currentUser) {
+        showModal('loginModal');
+        return;
+    }
+    const profileContent = document.getElementById('profileContent');
+    if (profileContent) {
+        profileContent.innerHTML = `
+            <div class="profile-info">
+                <p><strong>Username:</strong> ${currentUser.username}</p>
+                <p><strong>Email:</strong> ${currentUser.email}</p>
+                <p><strong>Status:</strong> ${currentUser.email_verified ? '✅ Verified' : '❌ Not Verified'}</p>
+                <p><strong>Member since:</strong> ${new Date(currentUser.created_at).toLocaleDateString()}</p>
             </div>
-            <div class="faq-answer">
-                ${faq.answer}
+            <div class="profile-actions">
+                <button class="profile-action-btn logout-btn" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
             </div>
         `;
-        document.getElementById('faqList').appendChild(faqItem);
-        const question = faqItem.querySelector('.faq-question');
-        question.addEventListener('click', () => toggleFaq(faqItem));
-        question.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-                toggleFaq(faqItem);
-            }
-        });
-    });
+        showModal('profileModal');
+    }
 }
-function toggleFaq(faqItem) {
-    const isActive = faqItem.classList.contains('active');
-    const answer = faqItem.querySelector('.faq-answer');
-    document.querySelectorAll('.faq-item').forEach(item => {
-        if (item !== faqItem) {
-            item.classList.remove('active');
-            item.querySelector('.faq-answer').classList.remove('active');
+function startVerificationTimer() {
+    let timeLeft = 30 * 60;
+    if (verificationTimer) clearInterval(verificationTimer);
+    verificationTimer = setInterval(() => {
+        timeLeft--;
+        if (timeLeft <= 0) {
+            stopVerificationTimer();
+            showAlert('Verification code has expired. Please request a new one.', 'error');
         }
-    });
-    if (!isActive) {
-        faqItem.classList.add('active');
-        answer.classList.add('active');
-    } else {
-        faqItem.classList.remove('active');
-        answer.classList.remove('active');
+    }, 1000);
+}
+function stopVerificationTimer() {
+    if (verificationTimer) {
+        clearInterval(verificationTimer);
+        verificationTimer = null;
     }
 }
-function setupListeners() {
-    const downloadBtn = document.getElementById('downloadBtn');
-    if (downloadBtn) {
-        downloadBtn.addEventListener('click', startDownload);
-        downloadBtn.addEventListener('keypress', function(e) {
-            if (e.key === "Enter" || e.key === " ") {
-                startDownload();
-            }
-        });
+function showModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) modal.style.display = 'block';
+}
+function closeModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.style.display = 'none';
+        const form = modal.querySelector('form');
+        if (form) form.reset();
     }
 }
-function startDownload() {
-    let progressbar = document.querySelector('.download-progress');
-    if (!progressbar) {
-        progressbar = document.createElement('div');
-        progressbar.className = 'download-progress';
-        progressbar.innerHTML = '<div class="progress-bar"></div>';
-        const downloadBtn = document.getElementById('downloadBtn');
-        downloadBtn.parentNode.insertBefore(progressbar, downloadBtn.nextSibling);
-    }
-    const progress = progressbar.querySelector('.progress-bar');
-    progressbar.style.display = 'block';
-    let prog = 0;
-    const interval = setInterval(() => {
-        prog += Math.random() * 12;
-        if (prog >= 100) {
-            prog = 100;
-            clearInterval(interval);
-            setTimeout(() => {
-                progressbar.style.display = 'none';
-                progress.style.width = '0%';
-                showDownloadComplete();
-            }, 400);
-        }
-        progress.style.width = prog + "%";
-    }, 100);
-    const downloadBtn = document.getElementById('downloadBtn');
-    const originalText = downloadBtn.innerHTML;
-    downloadBtn.innerHTML = '<i class="fas fa-download"></i> Downloading...';
-    downloadBtn.disabled = true;
-    setTimeout(() => {
-        downloadBtn.innerHTML = originalText;
-        downloadBtn.disabled = false;
-    }, 4000);
-}
-function showDownloadComplete() {
-    const notification = document.createElement('div');
-    notification.style.cssText = `
+function showAlert(message, type = 'info') {
+    const existingAlerts = document.querySelectorAll('.alert');
+    existingAlerts.forEach(alert => alert.remove());
+    const alert = document.createElement('div');
+    alert.className = `alert alert-${type}`;
+    alert.textContent = message;
+    alert.style.cssText = `
         position: fixed;
-        top: 20px;
-        right: 20px;
-        background: linear-gradient(45deg, #3b3b3b, #f7f8f9);
-        color: #000;
+        top: 80px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 10000;
+        min-width: 300px;
+        text-align: center;
         padding: 1rem 2rem;
-        border-radius: 10px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-        z-index: 1000;
-        animation: slideIn 0.5s ease-out;
+        border-radius: 5px;
+        color: white;
         font-weight: 600;
     `;
-    notification.innerHTML = '<i class="fas fa-check-circle"></i> Download Complete!';
-    document.body.appendChild(notification);
-    setTimeout(() => {
-        notification.style.animation = 'slideOut 0.5s ease-in';
-        setTimeout(() => {
-            if (notification.parentNode) {
-                document.body.removeChild(notification);
-            }
-        }, 500);
-    }, 3000);
+    if (type === 'success') alert.style.background = 'linear-gradient(45deg, #4CAF50, #45a049)';
+    else if (type === 'error') alert.style.background = 'linear-gradient(45deg, #f44336, #d32f2f)';
+    else alert.style.background = 'linear-gradient(45deg, #2196F3, #1976D2)';
+    document.body.appendChild(alert);
+    setTimeout(() => { if (alert.parentNode) alert.remove(); }, 5000);
 }
-function updateNav() {
-    const sections = document.querySelectorAll('section');
-    const navLinks = document.querySelectorAll('.nav-link');
-    let current = '';
-    sections.forEach(section => {
-        const sectionTop = section.offsetTop - 100;
-        const sectionHeight = section.clientHeight;
-        if (pageYOffset >= sectionTop && pageYOffset < sectionTop + sectionHeight) {
-            current = section.getAttribute('id');
-        }
-    });
-    navLinks.forEach(link => {
-        link.classList.remove('active');
-        if (link.getAttribute('href') === `#${current}`) {
-            link.classList.add('active');
-        }
-    });
-}
-function setupNav() {
-    const navDownload = document.getElementById('navDownload');
-    const navFaq = document.getElementById('navFaq');
-    const navUpdates = document.getElementById('navUpdates');
-    if (navDownload) {
-        navDownload.addEventListener('click', (e) => {
-            e.preventDefault();
-            document.getElementById('download').scrollIntoView({
-                behavior: 'smooth'
-            });
-        });
-    }
-    if (navUpdates) {
-        navUpdates.addEventListener('click', (e) => {
-            e.preventDefault();
-            document.getElementById('updates').scrollIntoView({
-                behavior: 'smooth'
-            });
-        });
-    }
-    if (navFaq) {
-        navFaq.addEventListener('click', (e) => {
-            e.preventDefault();
-            document.getElementById('faq').scrollIntoView({
-                behavior: 'smooth'
-            });
-        });
-    }
-    window.addEventListener('scroll', updateNav);
-}
-const phrases = [
-    "Fast. Precise. Lethal.",
-    "No Respawn. No Mercy.",
-    "Knockout or Be Knocked.",
-    "Enter. Fight. Survive."
-];
-function startTypewriter() {
-    const typewriterElement = document.getElementById('typewriter');
-    if (!typewriterElement) return;
-    let phraseIndex = 0;
-    let isDeleting = false;
-    let typingSpeed = 100;
-    function type() {
-        const currentPhrase = phrases[phraseIndex];
-        if (isDeleting) {
-            typewriterElement.textContent = currentPhrase.substring(0, typewriterElement.textContent.length - 1);
-            typingSpeed = 50;
-        } else {
-            typewriterElement.textContent = currentPhrase.substring(0, typewriterElement.textContent.length + 1);
-            typingSpeed = 100;
-        }
-        if (!isDeleting && typewriterElement.textContent === currentPhrase) {
-            typingSpeed = 2000; 
-            isDeleting = true;
-        } 
-        else if (isDeleting && typewriterElement.textContent === '') {
-            isDeleting = false;
-            phraseIndex = (phraseIndex + 1) % phrases.length;
-            typingSpeed = 500; 
-        }
-        setTimeout(type, typingSpeed);
-    }
-    type();
-}
-const style = document.createElement('style');
-style.textContent = `
-    @keyframes slideIn {
-        from { transform: translateX(100%); opacity: 0; }
-        to { transform: translateX(0); opacity: 1; }
-    }
-    @keyframes slideOut {
-        from { transform: translateX(0); opacity: 1; }
-        to { transform: translateX(100%); opacity: 0; }
-    }
-    .download-progress {
-        width: 100%;
-        height: 4px;
-        background: rgba(255, 255, 255, 0.1);
-        border-radius: 2px;
-        margin-top: 1rem;
-        overflow: hidden;
-        display: none;
-    }
-    .progress-bar {
-        height: 100%;
-        background: linear-gradient(45deg, #ffffff, #999999);
-        width: 0%;
-        transition: width 0.3s ease;
-    }
-`;
-document.head.appendChild(style);
+window.showModal = showModal;
+window.closeModal = closeModal;
+window.showProfile = showProfile;
+window.logout = logout;
