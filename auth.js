@@ -1,7 +1,7 @@
 let currentUser = null;
 let tempEmail = '';
 let verificationTimer = null;
-const API_BASE_URL = 'https://backend-2qx.onrender.com';
+const API_BASE_URL = 'https://api.allorigins.win/raw?url=https://backend-2rqx.onrender.com';
 document.addEventListener('DOMContentLoaded', function() {
     setupAuthListeners();
     checkExistingSession();
