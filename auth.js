@@ -5,7 +5,7 @@ const API_BASE_URL = 'https://backend-2rqx.onrender.com';
 document.addEventListener('DOMContentLoaded', function() {
     setupAuthListeners();
     checkExistingSession();
-    console.log('✅ FastAPI Auth System Loaded');
+    console.log('');
 });
 function setupAuthListeners() {
     const loginForm = document.getElementById('loginForm');
@@ -232,7 +232,7 @@ async function showProfile() {
             <div class="profile-info">
                 <p><strong>Username:</strong> ${currentUser.username}</p>
                 <p><strong>Email:</strong> ${currentUser.email}</p>
-                <p><strong>Status:</strong> ${currentUser.email_verified ? '✅ Verified' : '❌ Not Verified'}</p>
+                <p><strong>Status:</strong> ${currentUser.email_verified ? ' Verified' : ' Not Verified'}</p>
                 <p><strong>Member since:</strong> ${new Date(currentUser.created_at).toLocaleDateString()}</p>
             </div>
             <div class="profile-actions">
