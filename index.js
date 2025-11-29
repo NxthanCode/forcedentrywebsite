@@ -62,12 +62,6 @@ function initFaq() {
 function toggleFaq(faqItem) {
     const isActive = faqItem.classList.contains('active');
     const answer = faqItem.querySelector('.faq-answer');
-    document.querySelectorAll('.faq-item').forEach(item => {
-        if (item !== faqItem) {
-            item.classList.remove('active');
-            item.querySelector('.faq-answer').classList.remove('active');
-        }
-    });
     if (!isActive) {
         faqItem.classList.add('active');
         answer.classList.add('active');
